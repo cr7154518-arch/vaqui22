@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Mis finanzas · Vaquí{% endblock %}
+{% block content %}
+<div class="app-shell">
+  <header class="app-header">
+    <a href="{{ url_for('finance.dashboard') }}"><img class="logo logo-sm" src="{{ url_for('static', filename='img/logo-horizontal.png') }}" alt="Vaquí"></a>
+    <div class="header-right">
+      <span class="hello">Hola, {{ user.full_name.split()[0] }}</span>
+      <a class="icon-btn" href="{{ url_for('auth.logout') }}" title="Cerrar sesión">Salir</a>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div class="month-bar">
+      <button class="icon-btn" id="prevMonth" aria-label="Mes anterior">‹</button>
+      <input type="month" id="monthPicker">
+      <button class="icon-btn" id="nextMonth" aria-label="Mes siguiente">›</button>
+    </div>
+
+    <section class="balance-card">
+      <span class="balance-label">Saldo total</span>
+      <div class="balance-row">
+        <span class="balance-amount" id="totalBalance">$0</span>
+        <button class="eye-btn" id="toggleBalance" aria-label="Mostrar u ocultar saldo">Ocultar</button>
+      </div>
+      <div class="kpi-row">
+        <div><span class="kpi-label">Ingresos del mes</span><span class="kpi in" id="kpiIncome">$0</span></div>
+        <div><span class="kpi-label">Gastos del mes</span><span class="kpi out" id="kpiExpense">$0</span></div>
+        <div><span class="kpi-label">Ahorro del mes</span><span class="kpi" id="kpiNet">$0</span></div>
+      </div>
+    </section>
+
+    <div class="actions-row">
+      <button class="action-btn" id="openIncome">+ Ingreso</button>
+      <button class="action-btn" id="openExpense">− Gasto</button>
+      <button class="action-btn" id="openBudget">Presupuesto</button>
+    </div>
+
+    <section class="panel">
+      <h3>Gasto por categoría</h3>
+      <div id="categoryChart" class="bars"></div>
+    </section>
+
+    <section class="panel">
+      <h3>Presupuestos del mes</h3>
+      <div id="budgetList" class="bars"></div>
+    </section>
+
+    <section class="panel">
+      <h3>Últimos 6 meses</h3>
+      <div id="trendChart" class="trend"></div>
+      <div class="legend"><span class="dot in"></span>Ingresos <span class="dot out"></span>Gastos</div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h3>Mis cuentas</h3>
+        <button class="link-btn" id="openAccount">+ Nueva</button>
+      </div>
+      <ul id="accountList" class="history-list"></ul>
+    </section>
+
+    <section class="history-section">
+      <div class="panel-head">
+        <h3>Movimientos</h3>
+      </div>
+      <div class="filters">
+        <input type="search" id="filterText" placeholder="Buscar descripción">
+        <select id="filterType">
+          <option value="">Todos</option>
+          <option value="income">Ingresos</option>
+          <option value="expense">Gastos</option>
+        </select>
+        <select id="filterCategory"><option value="">Todas las categorías</option></select>
+      </div>
+      <ul class="history-list" id="historyList"></ul>
+    </section>
+  </main>
+</div>
+
+<!-- Modal movimiento -->
+<div class="modal-overlay" id="movementModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="movementTitle">Nuevo movimiento</h3>
+      <button class="close-btn" data-close="movementModal">✕</button>
+    </div>
+    <form id="movementForm">
+      <input type="hidden" id="mvType">
+      <label for="mvAmount">Monto (COP)</label>
+      <input id="mvAmount" type="number" min="1" step="any" required>
+      <label for="mvCategory">Categoría</label>
+      <select id="mvCategory" required></select>
+      <label for="mvAccount">Cuenta</label>
+      <select id="mvAccount" required></select>
+      <label for="mvDate">Fecha</label>
+      <input id="mvDate" type="date" required>
+      <label for="mvDesc">Descripción (opcional)</label>
+      <input id="mvDesc" type="text" maxlength="255">
+      <p class="form-error" id="movementError"></p>
+      <button class="btn btn-primary btn-block" type="submit">Guardar</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal presupuesto -->
+<div class="modal-overlay" id="budgetModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Presupuesto mensual</h3>
+      <button class="close-btn" data-close="budgetModal">✕</button>
+    </div>
+    <form id="budgetForm">
+      <label for="bgCategory">Categoría de gasto</label>
+      <select id="bgCategory" required></select>
+      <label for="bgLimit">Límite mensual (COP)</label>
+      <input id="bgLimit" type="number" min="1" step="any" required>
+      <p class="form-error" id="budgetError"></p>
+      <button class="btn btn-primary btn-block" type="submit">Guardar</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal cuenta -->
+<div class="modal-overlay" id="accountModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Nueva cuenta</h3>
+      <button class="close-btn" data-close="accountModal">✕</button>
+    </div>
+    <form id="accountForm">
+      <label for="acName">Nombre</label>
+      <input id="acName" type="text" maxlength="80" required placeholder="Ej: Bancolombia">
+      <label for="acKind">Tipo</label>
+      <select id="acKind">
+        <option value="cash">Efectivo</option>
+        <option value="bank">Cuenta bancaria</option>
+        <option value="card">Tarjeta</option>
+        <option value="savings">Ahorros</option>
+      </select>
+      <label for="acInitial">Saldo inicial (COP)</label>
+      <input id="acInitial" type="number" step="any" value="0">
+      <p class="form-error" id="accountError"></p>
+      <button class="btn btn-primary btn-block" type="submit">Crear</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

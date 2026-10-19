@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Crear cuenta · Vaquí{% endblock %}
+{% block content %}
+<main class="auth-wrapper">
+  <form class="auth-card" method="post">
+    <img class="logo logo-lg" src="{{ url_for('static', filename='img/logo-vertical.png') }}" alt="Vaquí">
+    <h2>Crear cuenta</h2>
+    <label for="full_name">Nombre completo</label>
+    <input id="full_name" name="full_name" type="text" required autocomplete="name">
+    <label for="email">Correo</label>
+    <input id="email" name="email" type="email" required autocomplete="email">
+    <label for="password">Contraseña (mínimo 6 caracteres)</label>
+    <input id="password" name="password" type="password" minlength="6" required autocomplete="new-password">
+    <button class="btn btn-primary btn-block" type="submit">Crear cuenta</button>
+    <p class="auth-switch">¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión</a></p>
+  </form>
+</main>
+{% endblock %}
